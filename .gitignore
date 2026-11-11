@@ -1,0 +1,8 @@
+temperatura
+cooler
+*.log
+alerta.json
+.ultimo_ping
+__pycache__/
+*.bak*
+.DS_Store

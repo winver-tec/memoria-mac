@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Winver · Memória do Mac</title>
+<link rel="icon" href="/logo.svg">
+<style>
+:root{--fundo:#0e0f11;--card:#16181b;--borda:#24272c;--texto:#e8e8e8;--fraco:#8b8f96;--verde:#34d399;--amarelo:#fbbf24;--laranja:#fb923c;--vermelho:#f43f5e}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fundo);color:var(--texto);font:14px/1.4 -apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,sans-serif;padding:24px 16px 40px}
+.topo{max-width:1180px;margin:0 auto 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+h1{font-size:20px;font-weight:650;margin:0;letter-spacing:-.01em}
+.logo{display:inline-flex;align-items:center;gap:10px;text-decoration:none;color:var(--texto)}
+.logo img{width:64px;height:64px;border-radius:16px;transition:transform .25s,box-shadow .25s}
+.logo:hover img{transform:scale(1.06);box-shadow:0 0 0 3px rgba(52,211,153,.25)}
+.logo strong{font-size:17px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+.sep{color:var(--borda);font-size:22px;line-height:1}
+.vivo{display:inline-flex;align-items:center;gap:7px;color:var(--fraco);font-size:12px}
+.vivo::before{content:'';width:8px;height:8px;border-radius:50%;background:#555}
+.vivo.on{color:var(--verde)}.vivo.on::before{background:var(--verde);animation:ping 1.8s ease-out infinite}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(52,211,153,.5)}100%{box-shadow:0 0 0 7px rgba(52,211,153,0)}}
+.estado{margin-left:auto;font-size:13px;font-weight:600;padding:5px 12px;border-radius:999px;background:#1d2a23;color:var(--verde);transition:all .4s}
+.estado.quente{background:#2d2614;color:var(--amarelo)}
+.estado.fogo{background:#3a1219;color:#ffb4c0;animation:pulsa 1.2s ease-in-out infinite}
+@keyframes pulsa{50%{box-shadow:0 0 22px rgba(244,63,94,.45)}}
+.grade{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--borda);border-radius:14px;padding:16px 18px;position:relative;overflow:hidden;transition:border-color .4s,box-shadow .4s}
+.card h2{margin:0;font-size:13px;font-weight:600;color:var(--fraco);text-transform:uppercase;letter-spacing:.06em}
+.card.fogo{border-color:rgba(244,63,94,.55);box-shadow:0 0 0 1px rgba(244,63,94,.25),0 0 40px rgba(244,63,94,.12)}
+.card.fogo::after{content:'';position:absolute;left:0;right:0;bottom:0;height:46%;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 120%,rgba(251,146,60,.28),rgba(244,63,94,.12) 45%,transparent 70%);animation:chama 1.6s ease-in-out infinite alternate}
+@keyframes chama{from{opacity:.55;transform:scaleY(.92)}to{opacity:1;transform:scaleY(1.06)}}
+svg{width:100%;display:block;overflow:visible}
+.trilho{fill:none;stroke:#26292e;stroke-width:12;stroke-linecap:round}
+.faixa{fill:none;stroke-width:12;stroke-linecap:round;transition:stroke-dashoffset .8s cubic-bezier(.3,1.2,.5,1)}
+.marca{stroke:#3a3e44;stroke-width:1.2}.marca.maior{stroke:#5b6068;stroke-width:1.8}
+.num{fill:#6b7078;font-size:9px}
+.agulha{stroke:#f2f2f2;stroke-width:2.4;stroke-linecap:round}
+.ponteiro{transform-origin:110px 104px;transition:transform .8s cubic-bezier(.3,1.25,.5,1)}
+.eixo{fill:#16181b;stroke:#f2f2f2;stroke-width:2.4}
+.valor{font-size:30px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.pct{font-size:15px;fill:var(--fraco);font-weight:500}
+.sub{text-align:center;color:var(--fraco);font-size:12.5px;font-variant-numeric:tabular-nums;margin-top:2px;min-height:18px}
+.sub b{color:var(--texto);font-weight:600}
+.largo{grid-column:span 2}
+.linhas{display:flex;flex-direction:column;gap:9px;margin-top:14px}
+.linha{display:grid;grid-template-columns:170px 1fr 92px;align-items:center;gap:10px;font-size:13px}
+.linha .nome{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.linha .n{color:var(--fraco);font-size:11.5px;margin-left:4px}
+.barra{height:9px;background:#22252a;border-radius:6px;overflow:hidden}
+.barra i{display:block;height:100%;border-radius:6px;transition:width .8s ease}
+.linha .mb{text-align:right;font-variant-numeric:tabular-nums;color:var(--fraco)}
+.linha .mb b{color:var(--texto)}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.kpi{background:#1b1e22;border-radius:10px;padding:10px 12px}
+.kpi span{display:block;color:var(--fraco);font-size:11.5px}
+.kpi b{font-size:22px;font-weight:650;font-variant-numeric:tabular-nums}
+.hist{margin-top:12px}
+.hist .leg{display:flex;gap:14px;font-size:11.5px;color:var(--fraco);margin-bottom:4px}
+.hist .leg i{display:inline-block;width:10px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
+@media (max-width:1100px){.grade{grid-template-columns:repeat(2,minmax(0,1fr))}}@media (max-width:700px){.grade{grid-template-columns:1fr}.largo{grid-column:auto}.linha{grid-template-columns:120px 1fr 78px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="topo">
+  <a class="logo" href="https://www.winver.com.br" title="Abrir o Winver"><img src="/logo.svg" alt="Winver"></a>
+  <h1>Memória do Mac</h1>
+  <span class="vivo" id="vivo">desconectado</span>
+  <span class="estado" id="estado">—</span>
+</div>
+<div class="grade">
+  <section class="card" id="c-mem"><h2>Memória usada</h2><div id="g-mem"></div><div class="sub" id="s-mem"></div></section>
+  <section class="card" id="c-swap"><h2>Swap (teto 50 GB)</h2><div id="g-swap"></div><div class="sub" id="s-swap"></div></section>
+  <section class="card" id="c-pres"><h2>Pressão de memória</h2><div id="g-pres"></div><div class="sub" id="s-pres"></div></section>
+  <section class="card" id="c-temp"><h2>Temperatura do chip (teto 95 °C)</h2><div id="g-temp"></div><div class="sub" id="s-temp"></div></section>
+  <section class="card largo"><h2>Quem está comendo a memória</h2><div class="linhas" id="linhas"></div></section>
+  <section class="card"><h2>Agora</h2>
+    <div class="kpis">
+      <div class="kpi"><span>Agentes Claude</span><b id="k-ag">—</b></div>
+      <div class="kpi"><span>Carga da CPU</span><b id="k-carga">—</b></div>
+      <div class="kpi"><span>Comprimida</span><b id="k-comp">—</b></div>
+      <div class="kpi"><span>Atualizado</span><b id="k-em">—</b></div>
+    </div>
+    <div class="hist"><div class="leg"><span><i style="background:#60a5fa"></i>Memória</span><span><i style="background:#f472b6"></i>Swap</span><span>últimos 5 min</span></div>
+      <svg id="hist" viewBox="0 0 300 70" preserveAspectRatio="none" height="70"></svg></div>
+  </section>
+</div>
+<section class="card" id="manual" style="grid-column:1/-1;max-width:1180px;margin:14px auto 0"><h2>Como funciona (pra não esquecer 😄)</h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px 28px;margin-top:12px;font-size:13.5px;line-height:1.6">
+<div><b>🔥 Quando toca o alarme</b><br>Pico pode: bater no teto e cair não toca nada. O limite é o macOS acusando pressão de memória o chip ficar quente/crítico (estado térmico do macOS), o swap passar de 50 GB (teto combinado: o Mac não deixa travar, então a gente vigia) ou o disco ficar com menos de 15 GB livres; só alarma se <b>ficar no limite 5 min seguidos</b> (pressão crítica: 1 min). Enquanto isso a tela mostra "No limite há X min". RAM cheia e swap alto sozinhos não contam. Desarma após 2 min fora do limite.</div>
+<div><b>🔔 O que acontece</b><br>Toca o som <i>Sosumi</i> na hora e a cada 2 min enquanto durar. A faixa fica vermelha pulsando.<br>O Maestro recebe um aviso (rotina <i>Memória em risco</i> no Maestri, no máximo 1 a cada 10 min), alivia a máquina e te conta no 1:1.</div>
+<div><b>🔁 Liga sozinho</b><br>Sobe quando o Mac liga e se reergue se cair. Não precisa fazer nada.<br>Faixa pequena: portal <i>Memória</i> no canvas. Página grande: <i>memoria.localhost</i>.</div>
+<div><b>🛠 Se precisar mexer</b><br>Peça ao Maestro: "desliga o alarme de memória", "pausa o aviso", "religa o medidor".<br>Na mão: <code>launchctl bootout gui/$(id -u)/com.winver.memoria</code> (desliga) · <code>launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.winver.memoria.plist</code> (liga).<br>Arquivos em <code>~/.winver/memoria</code>.</div>
+</div></section>
+<script>
+const C=110,CY=104,R=88,INI=-90,VAR=180;
+const pt=(g,r)=>{const a=(g-90)*Math.PI/180;return{x:C+r*Math.cos(a),y:CY+r*Math.sin(a)}};
+const arco=(d,a,r)=>{const p=pt(d,r),q=pt(a,r);return`M ${p.x} ${p.y} A ${r} ${r} 0 ${a-d>180?1:0} 1 ${q.x} ${q.y}`};
+// Aqui, ao contrário do carro: alto é ruim. Verde → amarelo → vermelho.
+const cor=p=>p<60?'var(--verde)':p<75?'var(--amarelo)':p<88?'var(--laranja)':'var(--vermelho)';
+const TETO={swap:50/60*100,temp:(95-30)/75*100};
+function marcaTeto(p){const a=(-90+180*p/100-90)*Math.PI/180,r1=R-16,r2=R+10;return`<line x1="${C+r1*Math.cos(a)}" y1="${CY+r1*Math.sin(a)}" x2="${C+r2*Math.cos(a)}" y2="${CY+r2*Math.sin(a)}" stroke="#f43f5e" stroke-width="3.5" stroke-linecap="round"><title>teto</title></line>`}
+const corNivel=n=>n==='crítica'?'var(--vermelho, #f43f5e)':n==='alerta'?'var(--amarelo, #fbbf24)':null;
+function montar(id){
+  const comp=Math.PI*R;let marcas='';
+  for(let v=0;v<=100;v+=5){const g=INI+VAR*v/100,m=v%25===0,a=pt(g,R-13),b=pt(g,R-(m?22:18));marcas+=`<line class="marca ${m?'maior':''}" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}"/>`}
+  document.getElementById(id).innerHTML=`<svg viewBox="0 0 220 142">
+   <defs><linearGradient id="gr-${id}" gradientUnits="userSpaceOnUse" x1="${C-R}" y1="0" x2="${C+R}" y2="0">
+    <stop offset="0" stop-color="#34d399"/><stop offset=".6" stop-color="#fbbf24"/><stop offset=".8" stop-color="#fb923c"/><stop offset="1" stop-color="#f43f5e"/></linearGradient></defs>
+   <path class="trilho" d="${arco(INI,INI+VAR,R)}"/>
+   <path class="faixa" id="f-${id}" d="${arco(INI,INI+VAR,R)}" stroke="url(#gr-${id})" stroke-dasharray="${comp}" stroke-dashoffset="${comp}"/>
+   ${marcas}
+   <text class="num" x="${C-R}" y="${CY+17}" text-anchor="middle">0</text><text class="num" x="${C}" y="${CY-R+34}" text-anchor="middle">50</text><text class="num" x="${C+R}" y="${CY+17}" text-anchor="middle">100</text>
+   <g class="ponteiro" id="p-${id}" style="transform:rotate(${INI}deg)"><line class="agulha" x1="${C}" y1="${CY+9}" x2="${C}" y2="${CY-R+24}"/></g>
+   ${TETO[id.slice(2)]?marcaTeto(TETO[id.slice(2)]):''}<circle class="eixo" cx="${C}" cy="${CY}" r="6"/>
+   <text class="valor" id="v-${id}" x="${C}" y="${CY+36}" text-anchor="middle">—</text></svg>`;
+}
+function mostrar(id,p,card,txt){
+  p=Math.max(0,Math.min(100,p??0));const comp=Math.PI*R;
+  document.getElementById('f-'+id).style.strokeDashoffset=comp*(1-p/100);
+  document.getElementById('p-'+id).style.transform=`rotate(${INI+VAR*p/100}deg)`;
+  const v=document.getElementById('v-'+id);v.innerHTML=txt??`${Math.round(p)}<tspan class="pct">%</tspan>`;v.style.fill=cor(p);
+  document.getElementById(card).classList.toggle('fogo',false);
+}
+['g-mem','g-swap','g-pres','g-temp'].forEach(montar);
+const gb=n=>n.toLocaleString('pt-BR',{maximumFractionDigits:1})+' GB';
+const fmtMb=mb=>mb>=1024?gb(mb/1024):mb+' MB';
+const hist=[];
+function desenharHist(){
+  const s=document.getElementById('hist');if(hist.length<2){s.innerHTML='';return}
+  const N=150,x=i=>i*300/(N-1),y=p=>68-p*0.66;
+  const off=N-hist.length,linha=k=>hist.map((h,i)=>`${i?'L':'M'}${x(i+off).toFixed(1)} ${y(h[k]).toFixed(1)}`).join(' ');
+  s.innerHTML=`<line x1="0" x2="300" y1="${y(88)}" y2="${y(88)}" stroke="rgba(244,63,94,.35)" stroke-dasharray="3 3"/>
+   <path d="${linha('m')}" fill="none" stroke="#60a5fa" stroke-width="1.8" vector-effect="non-scaling-stroke"/>
+   <path d="${linha('s')}" fill="none" stroke="#f472b6" stroke-width="1.8" vector-effect="non-scaling-stroke"/>`;
+}
+async function ler(){
+  try{
+    const d=await (await fetch('/dados',{cache:'no-store'})).json();
+    document.getElementById('vivo').className='vivo on';document.getElementById('vivo').textContent='ao vivo';
+    mostrar('g-mem',d.usada_pct,'c-mem');mostrar('g-swap',d.swap_pct,'c-swap');mostrar('g-pres',d.pressao_pct,'c-pres');if(corNivel(d.nivel))document.getElementById('v-g-pres').style.fill=corNivel(d.nivel);if(d.temp){mostrar('g-temp',d.temp.pct,'c-temp',`${Math.round(d.temp.chip)}<tspan class="pct">°C</tspan>`);document.getElementById('s-temp').innerHTML=`macOS: <b>${d.temp.estado_txt}</b> · SSD ${Math.round(d.temp.ssd)}° · bateria ${Math.round(d.temp.bateria)}°`}
+    document.getElementById('s-mem').innerHTML=`<b>${gb(d.usada_gb)}</b> de ${gb(d.total_gb)}`;
+    document.getElementById('s-swap').innerHTML=`<b>${gb(d.swap_usado_gb)}</b> em uso · cresce sozinho · disco livre ${gb(d.disco_livre_gb)}`;
+    document.getElementById('s-pres').innerHTML=`nível do macOS: <b>${d.nivel}</b>`;
+    document.getElementById('k-ag').textContent=d.agentes;
+    document.getElementById('k-carga').textContent=d.carga[0].toLocaleString('pt-BR')+' / '+d.nucleos;
+    document.getElementById('k-comp').textContent=gb(d.comprimida_gb);
+    document.getElementById('k-em').textContent=d.em.slice(0,5);
+    const max=Math.max(...d.grupos.map(g=>g.mb),1);
+    document.getElementById('linhas').innerHTML=d.grupos.map(g=>{const p=g.mb*100/d.total_gb/1024;
+      return`<div class="linha"><span class="nome">${g.nome}<span class="n">${g.n}</span></span><div class="barra"><i style="width:${g.mb*100/max}%;background:${cor(Math.min(100,p*4))}"></i></div><span class="mb"><b>${fmtMb(g.mb)}</b></span></div>`}).join('');
+    const pior=Math.max(d.usada_pct,d.swap_pct,d.pressao_pct??0),e=document.getElementById('estado');
+    const al=d.alarme||{},fogo=!!al.risco&&(al.motivo||[]).length>0,quente=!fogo&&al.no_limite_s>0;
+    e.className='estado'+(fogo?' fogo':quente?' quente':'');e.textContent=fogo?'🔥 Pegando fogo':quente?'No limite há '+Math.max(1,Math.round(al.no_limite_s/60))+' min':'Tranquilo';
+    document.title=(fogo?'🔥 ':'')+'Memória '+Math.round(d.usada_pct)+'% · swap '+Math.round(d.swap_pct)+'%';
+    hist.push({m:d.usada_pct,s:d.swap_pct});if(hist.length>150)hist.shift();desenharHist();
+  }catch{document.getElementById('vivo').className='vivo';document.getElementById('vivo').textContent='desconectado'}
+}
+ler();setInterval(ler,2000);
+</script>
+</body>
+</html>

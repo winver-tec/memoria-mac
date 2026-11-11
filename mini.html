@@ -1,0 +1,89 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Winver · Memória</title><link rel="icon" href="/logo.svg">
+<style>
+:root{--v:#34d399;--a:#fbbf24;--l:#fb923c;--r:#f43f5e}
+*{box-sizing:border-box}html,body{margin:0;height:100%}
+body{background:#07080a;color:#e8e8e8;font:12px -apple-system,BlinkMacSystemFont,sans-serif;padding:4px;overflow:hidden}
+.card{position:relative;height:100%;border-radius:14px;overflow:hidden;display:flex;flex-direction:column;
+ background:linear-gradient(160deg,#2a2d33 0%,#16181c 38%,#0f1013 62%,#1d2025 100%);
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.09),inset 0 -1px 0 rgba(0,0,0,.6),0 0 0 1px #2c3036;transition:box-shadow .4s}
+.card:before{content:"";position:absolute;inset:0;pointer-events:none;
+ background:repeating-linear-gradient(115deg,transparent 0 22px,rgba(255,255,255,.018) 22px 23px),
+ linear-gradient(90deg,transparent 0,transparent 64%,rgba(255,255,255,.035) 64%,rgba(255,255,255,.035) 64.4%,transparent 64.4%)}
+.rgb{position:absolute;left:18px;right:18px;top:0;height:2px;border-radius:2px;background:linear-gradient(90deg,#34d399,#22d3ee,#818cf8,#f472b6,#34d399);background-size:200% 100%;animation:rgb 6s linear infinite;box-shadow:0 0 10px rgba(56,189,248,.55)}
+@keyframes rgb{to{background-position:200% 0}}
+.topo{display:flex;align-items:center;gap:6px;padding:6px 10px 0;flex:1;min-height:0;position:relative}
+.base{display:flex;align-items:center;gap:14px;padding:0 14px 8px;height:44%;position:relative}
+.fan{position:relative;height:100%;aspect-ratio:1;flex:none}
+.fan svg{width:100%;height:100%;display:block}
+.rot{transform-origin:50px 50px}
+.rpm{flex:1;min-width:0;font-variant-numeric:tabular-nums;color:#8b8f96;font-size:11px;line-height:1.35}
+.rpm b{display:block;font-size:19px;color:#e8e8e8;font-weight:700;letter-spacing:.3px}
+.rpm i{display:block;height:4px;border-radius:3px;background:#26292e;margin-top:4px;overflow:hidden;font-style:normal}
+.rpm i u{display:block;height:100%;width:0;background:linear-gradient(90deg,#22d3ee,#818cf8);transition:width .8s;text-decoration:none}
+.marca{flex:none;text-align:right;color:#5d636c;font-size:10px;letter-spacing:2px;line-height:1.6;text-transform:uppercase}
+.marca strong{display:block;color:#c8ccd2;font-size:13px;letter-spacing:3px;font-weight:800}
+.pino{position:absolute;bottom:0;left:22%;right:30%;height:4px;background:repeating-linear-gradient(90deg,#b8892d 0 5px,transparent 5px 7px);opacity:.75}
+.vent{position:absolute;right:12px;top:10px;bottom:10px;width:5px;background:repeating-linear-gradient(0deg,#2b2f35 0 2px,transparent 2px 6px);opacity:.8}
+body.fogo .card{box-shadow:inset 0 0 0 2px rgba(244,63,94,.7),inset 0 -30px 40px -20px rgba(251,146,60,.35);animation:p 1.2s ease-in-out infinite}
+@keyframes p{50%{box-shadow:inset 0 0 0 2px rgba(244,63,94,1),inset 0 -40px 50px -20px rgba(244,63,94,.45)}}
+.g{flex:1;min-width:0;text-align:center}.g svg{width:100%;max-height:calc(56vh - 30px);display:block}
+.g span{display:block;color:#8b8f96;font-size:11px;white-space:nowrap;margin-top:-2px}
+.t{fill:none;stroke:#26292e;stroke-width:12;stroke-linecap:round}
+.f{fill:none;stroke-width:12;stroke-linecap:round;transition:stroke-dashoffset .8s}
+.pt{transform-origin:110px 100px;transition:transform .8s cubic-bezier(.3,1.25,.5,1)}
+.ag{stroke:#f2f2f2;stroke-width:3;stroke-linecap:round}.ex{fill:#111;stroke:#f2f2f2;stroke-width:3}
+.vl{font-size:34px;font-weight:700;font-variant-numeric:tabular-nums}
+.lado{width:128px;flex:none;font-size:11.5px;color:#8b8f96;line-height:1.55;font-variant-numeric:tabular-nums}
+.lado b{color:#e8e8e8;font-weight:600}.est{font-weight:700;font-size:12.5px;color:var(--v)}
+.est.q{color:var(--a)}.est.fo{color:#ffb4c0}
+</style></head><body><div class="card"><div class="rgb"></div><div class="vent"></div>
+<div class="topo">
+<div class="g" id="mem"></div><div class="g" id="swap"></div><div class="g" id="pres"></div><div class="g" id="temp"></div>
+<div class="lado"><div class="est" id="est">—</div><a href="/#manual" target="_blank" title="Como funciona" style="position:fixed;top:5px;right:8px;color:#6b7078;text-decoration:none;font-size:12px">ⓘ</a><div id="info"></div></div>
+</div>
+<div class="base"><div class="fan"><svg viewBox="0 0 100 100"><defs><radialGradient id="h0"><stop offset="0" stop-color="#3a3f46"/><stop offset="1" stop-color="#111316"/></radialGradient></defs>
+<circle cx="50" cy="50" r="49" fill="#0a0b0d" stroke="#30343a" stroke-width="1.5"/><circle cx="50" cy="50" r="45" fill="none" stroke="#1b1e22" stroke-width="3"/>
+<g class="rot" id="r0"></g><circle cx="50" cy="50" r="13" fill="url(#h0)" stroke="#3b4048"/><circle cx="50" cy="50" r="5" fill="#22d3ee" opacity=".5"/></svg></div>
+<div class="rpm">Cooler 1<b id="n0">—</b><span id="x0"></span><i><u id="b0"></u></i></div><div class="fan"><svg viewBox="0 0 100 100"><defs><radialGradient id="h1"><stop offset="0" stop-color="#3a3f46"/><stop offset="1" stop-color="#111316"/></radialGradient></defs>
+<circle cx="50" cy="50" r="49" fill="#0a0b0d" stroke="#30343a" stroke-width="1.5"/><circle cx="50" cy="50" r="45" fill="none" stroke="#1b1e22" stroke-width="3"/>
+<g class="rot" id="r1"></g><circle cx="50" cy="50" r="13" fill="url(#h1)" stroke="#3b4048"/><circle cx="50" cy="50" r="5" fill="#22d3ee" opacity=".5"/></svg></div>
+<div class="rpm">Cooler 2<b id="n1">—</b><span id="x1"></span><i><u id="b1"></u></i></div><a class="marca" href="https://www.winver.com.br" title="Abrir o Winver" style="text-decoration:none"><img src="/logo.svg" alt="Winver" style="width:60px;height:60px;border-radius:14px;display:block;margin:0 0 0 auto"></a><div class="pino"></div></div></div>
+<script>
+const C=110,CY=100,R=86,L=Math.PI*R;
+const pt=g=>{const a=(g-90)*Math.PI/180;return[C+R*Math.cos(a),CY+R*Math.sin(a)]};
+const [x0,y0]=pt(-90),[x1,y1]=pt(90),d=`M${x0} ${y0}A${R} ${R} 0 0 1 ${x1} ${y1}`;
+const cor=p=>p<60?'var(--v)':p<75?'var(--a)':p<88?'var(--l)':'var(--r)';
+const TETO={swap:50/60*100,temp:(95-30)/75*100};
+function marcaTeto(p){const a=(-90+180*p/100-90)*Math.PI/180,r1=R-16,r2=R+10;return`<line x1="${C+r1*Math.cos(a)}" y1="${CY+r1*Math.sin(a)}" x2="${C+r2*Math.cos(a)}" y2="${CY+r2*Math.sin(a)}" stroke="#f43f5e" stroke-width="3.5" stroke-linecap="round"><title>teto</title></line>`}
+const corNivel=n=>n==='crítica'?'var(--vermelho, #f43f5e)':n==='alerta'?'var(--amarelo, #fbbf24)':null;
+for(const id of['mem','swap','pres','temp'])document.getElementById(id).innerHTML=`<svg viewBox="0 0 220 116">
+<defs><linearGradient id="q${id}" gradientUnits="userSpaceOnUse" x1="${C-R}" x2="${C+R}" y1="0" y2="0"><stop offset="0" stop-color="#34d399"/><stop offset=".6" stop-color="#fbbf24"/><stop offset=".8" stop-color="#fb923c"/><stop offset="1" stop-color="#f43f5e"/></linearGradient></defs>
+<path class="t" d="${d}"/><path class="f" id="f${id}" d="${d}" stroke="url(#q${id})" stroke-dasharray="${L}" stroke-dashoffset="${L}"/>
+<g class="pt" id="p${id}" style="transform:rotate(-90deg)"><line class="ag" x1="${C}" y1="${CY-R+34}" x2="${C}" y2="${CY-R+14}"/></g>
+${TETO[id]?marcaTeto(TETO[id]):''}<text class="vl" id="v${id}" x="${C}" y="${CY-8}" text-anchor="middle">—</text></svg><span id="s${id}"></span>`;
+function m(id,p,sub,txt){p=Math.max(0,Math.min(100,p||0));
+ document.getElementById('f'+id).style.strokeDashoffset=L*(1-p/100);
+ document.getElementById('p'+id).style.transform=`rotate(${-90+180*p/100}deg)`;
+ const v=document.getElementById('v'+id);v.textContent=txt??Math.round(p)+'%';v.style.fill=cor(p);
+ document.getElementById('s'+id).textContent=sub}
+
+const PAS=Array.from({length:9},(_,k)=>`<path d="M50 50 C56 36 70 22 88 26 C80 34 66 44 50 50Z" fill="#23272c" stroke="#3a3f46" stroke-width=".7" transform="rotate(${k*40} 50 50)"/>`).join('');
+const FAN=[{a:0,rpm:0},{a:0,rpm:0}];
+FAN.forEach((_,i)=>document.getElementById('r'+i).innerHTML=PAS);
+let t0=performance.now();
+(function giro(t){const dt=(t-t0)/1000;t0=t;FAN.forEach((f,i)=>{f.a=(f.a+f.rpm/60*360*dt/9)%360;document.getElementById('r'+i).style.transform=`rotate(${f.a}deg)`});requestAnimationFrame(giro)})(t0);
+function fans(l){(l||[]).slice(0,2).forEach((f,i)=>{FAN[i].rpm=f.rpm;
+ document.getElementById('n'+i).textContent=f.rpm.toLocaleString('pt-BR')+' rpm';
+ const p=Math.max(0,Math.min(100,(f.rpm-f.min)*100/(f.max-f.min||1)));
+ document.getElementById('x'+i).textContent=`${Math.round(p)}% · máx ${f.max.toLocaleString('pt-BR')}`;
+ document.getElementById('b'+i).style.width=p+'%'})}
+const gb=n=>n.toLocaleString('pt-BR',{maximumFractionDigits:1});
+async function ler(){try{const x=await(await fetch('/dados',{cache:'no-store'})).json();
+ m('mem',x.usada_pct,`RAM ${gb(x.usada_gb)}/${gb(x.total_gb)} GB`);m('swap',x.swap_pct,`Swap ${gb(x.swap_usado_gb)} GB · teto 50`);m('pres',x.pressao_pct,`Pressão · ${x.nivel}`);if(corNivel(x.nivel))document.getElementById('vpres').style.fill=corNivel(x.nivel);if(x.temp)m('temp',x.temp.pct,`Chip · teto 95° · ${x.temp.estado_txt}`,Math.round(x.temp.chip)+'°');
+ fans(x.cooler);const pior=Math.max(x.usada_pct,x.swap_pct,x.pressao_pct||0),al=x.alarme||{},fogo=!!al.risco&&(al.motivo||[]).length>0,q=!fogo&&al.no_limite_s>0;
+ document.body.classList.toggle('fogo',fogo);const e=document.getElementById('est');e.className='est'+(fogo?' fo':q?' q':'');e.textContent=fogo?'🔥 Pegando fogo':q?'No limite há '+Math.max(1,Math.round(al.no_limite_s/60))+' min':'Tranquilo';
+ const top=x.grupos.slice(0,3).map(g=>`${g.nome.replace('Agentes ','')} <b>${gb(g.mb/1024)}</b>`).join('<br>');
+ document.getElementById('info').innerHTML=`${x.agentes} agentes · carga <b>${gb(x.carga[0])}</b><br>${top}`;
+}catch{document.getElementById('est').textContent='desconectado'}}
+ler();setInterval(ler,2000);
+</script></body></html>
