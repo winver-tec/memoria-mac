@@ -36,6 +36,11 @@ body.fogo .card{box-shadow:inset 0 0 0 2px rgba(244,63,94,.7),inset 0 -30px 40px
 .lado{width:128px;flex:none;font-size:11.5px;color:#8b8f96;line-height:1.55;font-variant-numeric:tabular-nums}
 .lado b{color:#e8e8e8;font-weight:600}.est{font-weight:700;font-size:12.5px;color:var(--v)}
 .est.q{color:var(--a)}.est.fo{color:#ffb4c0}
+.bt-f{transition:width .8s cubic-bezier(.3,1.1,.5,1)}
+.bt-raio{fill:#fde047;stroke:#07080a;stroke-width:2;stroke-linejoin:round;paint-order:stroke;transition:opacity .3s}
+.bt-vl{paint-order:stroke;stroke:rgba(7,8,10,.75);stroke-width:5;stroke-linejoin:round}
+.baixa .bt-f{animation:bt 1s ease-in-out infinite}.baixa .bt-corpo{stroke:#f43f5e}
+@keyframes bt{50%{opacity:.35}}
 </style></head><body><div class="card"><div class="rgb"></div><div class="vent"></div>
 <div class="topo">
 <div class="g" id="mem"></div><div class="g" id="swap"></div><div class="g" id="pres"></div><div class="g" id="temp"></div><div class="g" id="bat"></div>
@@ -59,11 +64,32 @@ const corNivel=n=>n==='crítica'?'var(--vermelho, #f43f5e)':n==='alerta'?'var(--
 // Bateria é o contrário dos outros: baixo é ruim. Gradiente invertido (vermelho → verde).
 const STOPS={pad:'<stop offset="0" stop-color="#34d399"/><stop offset=".6" stop-color="#fbbf24"/><stop offset=".8" stop-color="#fb923c"/><stop offset="1" stop-color="#f43f5e"/>',bat:'<stop offset="0" stop-color="#f43f5e"/><stop offset=".15" stop-color="#fb923c"/><stop offset=".4" stop-color="#fbbf24"/><stop offset=".6" stop-color="#34d399"/>'};
 const corBat=p=>p<=10?'var(--r)':p<=20?'var(--l)':p<50?'var(--a)':'var(--v)';
-for(const id of['mem','swap','pres','temp','bat'])document.getElementById(id).innerHTML=`<svg viewBox="0 0 220 116">
+for(const id of['mem','swap','pres','temp'])document.getElementById(id).innerHTML=`<svg viewBox="0 0 220 116">
 <defs><linearGradient id="q${id}" gradientUnits="userSpaceOnUse" x1="${C-R}" x2="${C+R}" y1="0" y2="0">${STOPS[id]||STOPS.pad}</linearGradient></defs>
 <path class="t" d="${d}"/><path class="f" id="f${id}" d="${d}" stroke="url(#q${id})" stroke-dasharray="${L}" stroke-dashoffset="${L}"/>
 <g class="pt" id="p${id}" style="transform:rotate(-90deg)"><line class="ag" x1="${C}" y1="${CY-R+34}" x2="${C}" y2="${CY-R+14}"/></g>
 ${TETO[id]?marcaTeto(TETO[id]):''}<text class="vl" id="v${id}" x="${C}" y="${CY-8}" text-anchor="middle">—</text></svg><span id="s${id}"></span>`;
+// Bateria desenhada como bateria (CEO 12/11): corpo + polo, carga enche da esquerda com o gradiente vermelho → verde.
+const BX=34,BY=40,BW=140,BH=50;
+document.getElementById('bat').innerHTML=`<svg viewBox="0 0 220 116">
+<defs><linearGradient id="qbat" gradientUnits="userSpaceOnUse" x1="${BX}" x2="${BX+BW}" y1="0" y2="0">${STOPS.bat}</linearGradient>
+<clipPath id="cbat"><rect x="${BX}" y="${BY}" width="${BW}" height="${BH}" rx="7"/></clipPath>
+<linearGradient id="brilho" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".45" stop-color="#fff" stop-opacity=".04"/><stop offset="1" stop-color="#000" stop-opacity=".25"/></linearGradient></defs>
+<rect class="bt-corpo" x="${BX-8}" y="${BY-8}" width="${BW+16}" height="${BH+16}" rx="14" fill="#15171b" stroke="#4a4f57" stroke-width="4"/>
+<rect x="${BX+BW+12}" y="${BY+BH/2-13}" width="11" height="26" rx="4" fill="#4a4f57"/>
+<g clip-path="url(#cbat)"><rect x="${BX}" y="${BY}" width="${BW}" height="${BH}" fill="#202328"/>
+<rect class="bt-f" id="fbat" x="${BX}" y="${BY}" width="0" height="${BH}" fill="url(#qbat)"/>
+${[1,2,3].map(k=>`<line x1="${BX+BW*k/4}" x2="${BX+BW*k/4}" y1="${BY}" y2="${BY+BH}" stroke="#07080a" stroke-opacity=".45" stroke-width="3"/>`).join('')}
+<rect x="${BX}" y="${BY}" width="${BW}" height="${BH}" fill="url(#brilho)"/></g>
+<path class="bt-raio" id="rbat" style="opacity:0" d="M60 51 L50 68 L58 68 L54 81 L67 62 L59 62 L64 51Z"/>
+<text class="vl bt-vl" id="vbat" style="font-size:30px" x="${BX+BW/2+8}" y="${BY+BH/2+11}" text-anchor="middle">—</text>
+</svg><span id="sbat"></span>`;
+function bateria(b){const p=Math.max(0,Math.min(100,b.pct||0));
+ document.getElementById('fbat').setAttribute('width',BW*p/100);
+ document.getElementById('rbat').style.opacity=b.tomada?1:0;
+ const v=document.getElementById('vbat');v.textContent=p+'%';v.style.fill=corBat(p);
+ document.getElementById('bat').classList.toggle('baixa',p<=10&&!b.tomada);
+ document.getElementById('sbat').textContent=`Bateria · ${b.estado==='carregando'?'carregando'+(b.restante?' · '+b.restante:''):b.estado==='na tomada'?'na tomada':(b.restante?b.restante+' restante':b.estado)}`}
 function m(id,p,sub,txt){p=Math.max(0,Math.min(100,p||0));
  document.getElementById('f'+id).style.strokeDashoffset=L*(1-p/100);
  document.getElementById('p'+id).style.transform=`rotate(${-90+180*p/100}deg)`;
@@ -83,7 +109,7 @@ function fans(l){(l||[]).slice(0,2).forEach((f,i)=>{FAN[i].rpm=f.rpm;
 const gb=n=>n.toLocaleString('pt-BR',{maximumFractionDigits:1});
 async function ler(){try{const x=await(await fetch('/dados',{cache:'no-store'})).json();
  m('mem',x.usada_pct,`RAM ${gb(x.usada_gb)}/${gb(x.total_gb)} GB`);m('swap',x.swap_pct,`Swap ${gb(x.swap_usado_gb)} GB · teto 50`);m('pres',x.pressao_pct,`Pressão · ${x.nivel}`);if(corNivel(x.nivel))document.getElementById('vpres').style.fill=corNivel(x.nivel);if(x.temp)m('temp',x.temp.pct,`Chip · teto 95° · ${x.temp.estado_txt}`,Math.round(x.temp.chip)+'°');
- if(x.bateria){const b=x.bateria;m('bat',b.pct,`Bateria · ${b.estado==='carregando'?'⚡ carregando'+(b.restante?' · '+b.restante:''):b.estado==='na tomada'?'na tomada':(b.restante?b.restante+' restante':b.estado)}`,(b.tomada?'⚡':'')+b.pct+'%');document.getElementById('vbat').style.fill=corBat(b.pct)}
+ if(x.bateria)bateria(x.bateria);
  fans(x.cooler);const pior=Math.max(x.usada_pct,x.swap_pct,x.pressao_pct||0),al=x.alarme||{},fogo=!!al.risco&&(al.motivo||[]).length>0,q=!fogo&&al.no_limite_s>0;
  document.body.classList.toggle('fogo',fogo);const e=document.getElementById('est');e.className='est'+(fogo?' fo':q?' q':'');e.textContent=fogo?'🔥 Pegando fogo':q?'No limite há '+Math.max(1,Math.round(al.no_limite_s/60))+' min':'Tranquilo';
  const top=x.grupos.slice(0,3).map(g=>`${g.nome.replace('Agentes ','')} <b>${gb(g.mb/1024)}</b>`).join('<br>');
