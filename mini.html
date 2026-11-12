@@ -38,7 +38,7 @@ body.fogo .card{box-shadow:inset 0 0 0 2px rgba(244,63,94,.7),inset 0 -30px 40px
 .est.q{color:var(--a)}.est.fo{color:#ffb4c0}
 </style></head><body><div class="card"><div class="rgb"></div><div class="vent"></div>
 <div class="topo">
-<div class="g" id="mem"></div><div class="g" id="swap"></div><div class="g" id="pres"></div><div class="g" id="temp"></div>
+<div class="g" id="mem"></div><div class="g" id="swap"></div><div class="g" id="pres"></div><div class="g" id="temp"></div><div class="g" id="bat"></div>
 <div class="lado"><div class="est" id="est">—</div><a href="/#manual" target="_blank" title="Como funciona" style="position:fixed;top:5px;right:8px;color:#6b7078;text-decoration:none;font-size:12px">ⓘ</a><div id="info"></div></div>
 </div>
 <div class="base"><div class="fan"><svg viewBox="0 0 100 100"><defs><radialGradient id="h0"><stop offset="0" stop-color="#3a3f46"/><stop offset="1" stop-color="#111316"/></radialGradient></defs>
@@ -56,8 +56,11 @@ const cor=p=>p<60?'var(--v)':p<75?'var(--a)':p<88?'var(--l)':'var(--r)';
 const TETO={swap:50/60*100,temp:(95-30)/75*100};
 function marcaTeto(p){const a=(-90+180*p/100-90)*Math.PI/180,r1=R-16,r2=R+10;return`<line x1="${C+r1*Math.cos(a)}" y1="${CY+r1*Math.sin(a)}" x2="${C+r2*Math.cos(a)}" y2="${CY+r2*Math.sin(a)}" stroke="#f43f5e" stroke-width="3.5" stroke-linecap="round"><title>teto</title></line>`}
 const corNivel=n=>n==='crítica'?'var(--vermelho, #f43f5e)':n==='alerta'?'var(--amarelo, #fbbf24)':null;
-for(const id of['mem','swap','pres','temp'])document.getElementById(id).innerHTML=`<svg viewBox="0 0 220 116">
-<defs><linearGradient id="q${id}" gradientUnits="userSpaceOnUse" x1="${C-R}" x2="${C+R}" y1="0" y2="0"><stop offset="0" stop-color="#34d399"/><stop offset=".6" stop-color="#fbbf24"/><stop offset=".8" stop-color="#fb923c"/><stop offset="1" stop-color="#f43f5e"/></linearGradient></defs>
+// Bateria é o contrário dos outros: baixo é ruim. Gradiente invertido (vermelho → verde).
+const STOPS={pad:'<stop offset="0" stop-color="#34d399"/><stop offset=".6" stop-color="#fbbf24"/><stop offset=".8" stop-color="#fb923c"/><stop offset="1" stop-color="#f43f5e"/>',bat:'<stop offset="0" stop-color="#f43f5e"/><stop offset=".15" stop-color="#fb923c"/><stop offset=".4" stop-color="#fbbf24"/><stop offset=".6" stop-color="#34d399"/>'};
+const corBat=p=>p<=10?'var(--r)':p<=20?'var(--l)':p<50?'var(--a)':'var(--v)';
+for(const id of['mem','swap','pres','temp','bat'])document.getElementById(id).innerHTML=`<svg viewBox="0 0 220 116">
+<defs><linearGradient id="q${id}" gradientUnits="userSpaceOnUse" x1="${C-R}" x2="${C+R}" y1="0" y2="0">${STOPS[id]||STOPS.pad}</linearGradient></defs>
 <path class="t" d="${d}"/><path class="f" id="f${id}" d="${d}" stroke="url(#q${id})" stroke-dasharray="${L}" stroke-dashoffset="${L}"/>
 <g class="pt" id="p${id}" style="transform:rotate(-90deg)"><line class="ag" x1="${C}" y1="${CY-R+34}" x2="${C}" y2="${CY-R+14}"/></g>
 ${TETO[id]?marcaTeto(TETO[id]):''}<text class="vl" id="v${id}" x="${C}" y="${CY-8}" text-anchor="middle">—</text></svg><span id="s${id}"></span>`;
@@ -80,6 +83,7 @@ function fans(l){(l||[]).slice(0,2).forEach((f,i)=>{FAN[i].rpm=f.rpm;
 const gb=n=>n.toLocaleString('pt-BR',{maximumFractionDigits:1});
 async function ler(){try{const x=await(await fetch('/dados',{cache:'no-store'})).json();
  m('mem',x.usada_pct,`RAM ${gb(x.usada_gb)}/${gb(x.total_gb)} GB`);m('swap',x.swap_pct,`Swap ${gb(x.swap_usado_gb)} GB · teto 50`);m('pres',x.pressao_pct,`Pressão · ${x.nivel}`);if(corNivel(x.nivel))document.getElementById('vpres').style.fill=corNivel(x.nivel);if(x.temp)m('temp',x.temp.pct,`Chip · teto 95° · ${x.temp.estado_txt}`,Math.round(x.temp.chip)+'°');
+ if(x.bateria){const b=x.bateria;m('bat',b.pct,`Bateria · ${b.estado==='carregando'?'⚡ carregando'+(b.restante?' · '+b.restante:''):b.estado==='na tomada'?'na tomada':(b.restante?b.restante+' restante':b.estado)}`,(b.tomada?'⚡':'')+b.pct+'%');document.getElementById('vbat').style.fill=corBat(b.pct)}
  fans(x.cooler);const pior=Math.max(x.usada_pct,x.swap_pct,x.pressao_pct||0),al=x.alarme||{},fogo=!!al.risco&&(al.motivo||[]).length>0,q=!fogo&&al.no_limite_s>0;
  document.body.classList.toggle('fogo',fogo);const e=document.getElementById('est');e.className='est'+(fogo?' fo':q?' q':'');e.textContent=fogo?'🔥 Pegando fogo':q?'No limite há '+Math.max(1,Math.round(al.no_limite_s/60))+' min':'Tranquilo';
  const top=x.grupos.slice(0,3).map(g=>`${g.nome.replace('Agentes ','')} <b>${gb(g.mb/1024)}</b>`).join('<br>');

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Medidor de memória do Mac: serve index.html e /dados (JSON) a cada leitura.
+"""Acelerador da memória do Mac (CEO 09/11): serve index.html e /dados (JSON) a cada leitura.
 Só lê o sistema (vm_stat, sysctl, ps). Porta 4747; nome legível via portless: memoria.localhost."""
 import http.server, json, os, re, subprocess, time
 from collections import defaultdict
@@ -26,7 +26,7 @@ def grupo(cmd, cwd_hint=''):
     if 'kernel_task' in c or 'windowserver' in c: return 'Sistema'
     return 'Outros'
 
-TETO_SWAP_GB = 50    # teto combinado de swap = 50 GB (ajuste ao seu disco)
+TETO_SWAP_GB = 50    # CEO 09/11: teto combinado de swap = 50 GB (metade do disco livre)
 ESCALA_SWAP_GB = 60  # mostrador vai até 60 para o teto de 50 aparecer como marca
 def _livre():
     v = os.statvfs('/System/Volumes/VM'); return v.f_bavail * v.f_frsize
@@ -39,6 +39,24 @@ def temperatura():
         # Escala do mostrador: 30 °C = 0%, 105 °C = 100%.
         t['pct'] = max(0, min(100, (t['chip'] - 30) * 100 / 75))
         return t
+    except Exception:
+        return None
+
+def bateria():
+    """pmset -g batt: carga, fonte e tempo. Bateria baixa SEM tomada = o macOS entra em
+    economia de energia e o Mac fica lento (CEO 11/11: "com a bateria baixa o mac começou a chorar")."""
+    try:
+        out = sh('pmset', '-g', 'batt')
+        pct = int(re.search(r'(\d+)%', out).group(1))
+        tomada = 'AC Power' in out
+        carregando = 'charging' in out and 'discharging' not in out and 'not charging' not in out
+        m = re.search(r'(\d+:\d+) remaining', out)
+        restante = m.group(1) if m else None
+        if tomada: estado = 'carregando' if carregando and pct < 100 else 'na tomada'
+        elif pct <= 10: estado = 'crítica'
+        elif pct <= 20: estado = 'baixa'
+        else: estado = 'na bateria'
+        return {'pct': pct, 'tomada': tomada, 'carregando': carregando, 'restante': restante, 'estado': estado}
     except Exception:
         return None
 
@@ -77,11 +95,12 @@ def dados():
         'swap_total_gb': sw_total / 2**30, 'swap_usado_gb': sw_usado / 2**30,
         # O macOS NÃO tem teto de swap: cria arquivos de 1 GB conforme precisa,
         # até onde o disco deixar. "total" do sysctl é só o que já foi criado.
-        # Mostrador em escala de 50 GB (teto combinado; o macOS não deixa travar).
+        # Mostrador em escala de 50 GB (teto combinado com o CEO; o macOS não deixa travar).
         'swap_pct': sw_usado * 100 / (ESCALA_SWAP_GB * 2**30),
         'disco_livre_gb': round(_livre() / 2**30, 1),
         'temp': temperatura(),
         'cooler': cooler(),
+        'bateria': bateria(),
         'pressao_pct': (100 - livre_pct) if livre_pct is not None else None,
         'nivel': {1: 'normal', 2: 'alerta', 4: 'crítica'}.get(nivel, 'normal'),
         'agentes': agentes, 'carga': [round(x, 1) for x in carga], 'nucleos': os.cpu_count(),
@@ -89,14 +108,15 @@ def dados():
     }
 
 
-# ── Alarme: "pode deixar na aceleração máxima, mas tem que ter
+# ── Alarme (CEO 09/11): "pode deixar na aceleração máxima, mas tem que ter
 # controle" + "tem que manter um determinado tempo no limite". RAM cheia NÃO
 # alarma. Swap também não: o macOS cresce o swap sozinho. LIMITE = pressão do
-# macOS em alerta/crítica, chip quente/crítico (thermalState do macOS), swap >= 50 GB (teto combinado) ou disco livre < 15 GB (aí o swap não tem pra onde crescer).
+# macOS em alerta/crítica, chip quente/crítico (thermalState do macOS), swap >= 50 GB (teto do CEO) ou disco livre < 15 GB (aí o swap não tem pra onde crescer).
 # RISCO (som + ping) só se ficar no limite SEM PARAR por 5 min (crítica: 1 min).
-# Saiu do limite: vermelho e som param NA HORA ("estabilizou, o sinal
+# Saiu do limite: vermelho e som param NA HORA (CEO 09/11 "estabilizou, o sinal
 # vermelho tem que sair"); o alarme só zera de vez após 30 s fora (evita re-ping). Pico rápido = só "No limite" na tela.
 LIVRE_MIN_PCT = 20
+BATERIA_MIN_PCT = 10
 DISCO_MIN_GB, SUSTENTA, SUSTENTA_CRITICA, DESARMA, REPETE_SOM = 15, 300, 60, 30, 120
 ESTADO = os.path.join(AQUI, 'alerta.json')
 ALARME = {'risco': False, 'no_limite_s': 0, 'desde': None, 'motivo': []}
@@ -106,7 +126,10 @@ def motivo_do(d):
     if d['swap_usado_gb'] >= TETO_SWAP_GB: m.append(f"swap {d['swap_usado_gb']:.0f} GB (teto 50)")
     if d.get('temp') and (d['temp']['estado'] >= 2 or d['temp']['chip'] >= 95): m.append(f"chip {d['temp']['estado_txt']} ({d['temp']['chip']:.0f} °C)")
     if d['disco_livre_gb'] < DISCO_MIN_GB: m.append(f"disco livre {d['disco_livre_gb']:.0f} GB")
-    # "alerta" do macOS
+    # CEO 11/11 23:1x: bateria baixa sem tomada = macOS em economia de energia, Mac lento.
+    b = d.get('bateria')
+    if b and not b['tomada'] and b['pct'] <= BATERIA_MIN_PCT: m.append(f"bateria {b['pct']}% sem tomada")
+    # CEO 09/11 15:58 "ajusta esses sinais se dá pra esticar": "alerta" do macOS
     # sozinho NÃO é risco (com 41% livre ele ainda comprime). Alerta só conta se a
     # memória livre do memory_pressure cair abaixo de LIVRE_MIN_PCT; crítica conta sempre.
     livre = None if d.get('pressao_pct') is None else 100 - d['pressao_pct']

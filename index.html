@@ -75,6 +75,7 @@ svg{width:100%;display:block;overflow:visible}
   <section class="card" id="c-swap"><h2>Swap (teto 50 GB)</h2><div id="g-swap"></div><div class="sub" id="s-swap"></div></section>
   <section class="card" id="c-pres"><h2>Pressão de memória</h2><div id="g-pres"></div><div class="sub" id="s-pres"></div></section>
   <section class="card" id="c-temp"><h2>Temperatura do chip (teto 95 °C)</h2><div id="g-temp"></div><div class="sub" id="s-temp"></div></section>
+  <section class="card" id="c-bat"><h2>Bateria</h2><div id="g-bat"></div><div class="sub" id="s-bat"></div></section>
   <section class="card largo"><h2>Quem está comendo a memória</h2><div class="linhas" id="linhas"></div></section>
   <section class="card"><h2>Agora</h2>
     <div class="kpis">
@@ -89,7 +90,7 @@ svg{width:100%;display:block;overflow:visible}
 </div>
 <section class="card" id="manual" style="grid-column:1/-1;max-width:1180px;margin:14px auto 0"><h2>Como funciona (pra não esquecer 😄)</h2>
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px 28px;margin-top:12px;font-size:13.5px;line-height:1.6">
-<div><b>🔥 Quando toca o alarme</b><br>Pico pode: bater no teto e cair não toca nada. O limite é o macOS acusando pressão de memória o chip ficar quente/crítico (estado térmico do macOS), o swap passar de 50 GB (teto combinado: o Mac não deixa travar, então a gente vigia) ou o disco ficar com menos de 15 GB livres; só alarma se <b>ficar no limite 5 min seguidos</b> (pressão crítica: 1 min). Enquanto isso a tela mostra "No limite há X min". RAM cheia e swap alto sozinhos não contam. Desarma após 2 min fora do limite.</div>
+<div><b>🔥 Quando toca o alarme</b><br>Pico pode: bater no teto e cair não toca nada. O limite é o macOS acusando pressão de memória o chip ficar quente/crítico (estado térmico do macOS), a bateria ficar em 10% ou menos sem tomada, o swap passar de 50 GB (teto combinado: o Mac não deixa travar, então a gente vigia) ou o disco ficar com menos de 15 GB livres; só alarma se <b>ficar no limite 5 min seguidos</b> (pressão crítica: 1 min). Enquanto isso a tela mostra "No limite há X min". RAM cheia e swap alto sozinhos não contam. Desarma após 2 min fora do limite.</div>
 <div><b>🔔 O que acontece</b><br>Toca o som <i>Sosumi</i> na hora e a cada 2 min enquanto durar. A faixa fica vermelha pulsando.<br>O Maestro recebe um aviso (rotina <i>Memória em risco</i> no Maestri, no máximo 1 a cada 10 min), alivia a máquina e te conta no 1:1.</div>
 <div><b>🔁 Liga sozinho</b><br>Sobe quando o Mac liga e se reergue se cair. Não precisa fazer nada.<br>Faixa pequena: portal <i>Memória</i> no canvas. Página grande: <i>memoria.localhost</i>.</div>
 <div><b>🛠 Se precisar mexer</b><br>Peça ao Maestro: "desliga o alarme de memória", "pausa o aviso", "religa o medidor".<br>Na mão: <code>launchctl bootout gui/$(id -u)/com.winver.memoria</code> (desliga) · <code>launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.winver.memoria.plist</code> (liga).<br>Arquivos em <code>~/.winver/memoria</code>.</div>
@@ -108,7 +109,7 @@ function montar(id){
   for(let v=0;v<=100;v+=5){const g=INI+VAR*v/100,m=v%25===0,a=pt(g,R-13),b=pt(g,R-(m?22:18));marcas+=`<line class="marca ${m?'maior':''}" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}"/>`}
   document.getElementById(id).innerHTML=`<svg viewBox="0 0 220 142">
    <defs><linearGradient id="gr-${id}" gradientUnits="userSpaceOnUse" x1="${C-R}" y1="0" x2="${C+R}" y2="0">
-    <stop offset="0" stop-color="#34d399"/><stop offset=".6" stop-color="#fbbf24"/><stop offset=".8" stop-color="#fb923c"/><stop offset="1" stop-color="#f43f5e"/></linearGradient></defs>
+    ${id==='g-bat'?'<stop offset="0" stop-color="#f43f5e"/><stop offset=".15" stop-color="#fb923c"/><stop offset=".4" stop-color="#fbbf24"/><stop offset=".6" stop-color="#34d399"/>':'<stop offset="0" stop-color="#34d399"/><stop offset=".6" stop-color="#fbbf24"/><stop offset=".8" stop-color="#fb923c"/><stop offset="1" stop-color="#f43f5e"/>'}</linearGradient></defs>
    <path class="trilho" d="${arco(INI,INI+VAR,R)}"/>
    <path class="faixa" id="f-${id}" d="${arco(INI,INI+VAR,R)}" stroke="url(#gr-${id})" stroke-dasharray="${comp}" stroke-dashoffset="${comp}"/>
    ${marcas}
@@ -124,7 +125,9 @@ function mostrar(id,p,card,txt){
   const v=document.getElementById('v-'+id);v.innerHTML=txt??`${Math.round(p)}<tspan class="pct">%</tspan>`;v.style.fill=cor(p);
   document.getElementById(card).classList.toggle('fogo',false);
 }
-['g-mem','g-swap','g-pres','g-temp'].forEach(montar);
+['g-mem','g-swap','g-pres','g-temp','g-bat'].forEach(montar);
+// Bateria: baixo é ruim (ao contrário dos outros). CEO 11/11: bateria baixa sem tomada = Mac lento.
+const corBat=p=>p<=10?'var(--vermelho)':p<=20?'var(--laranja)':p<50?'var(--amarelo)':'var(--verde)';
 const gb=n=>n.toLocaleString('pt-BR',{maximumFractionDigits:1})+' GB';
 const fmtMb=mb=>mb>=1024?gb(mb/1024):mb+' MB';
 const hist=[];
@@ -141,6 +144,7 @@ async function ler(){
     const d=await (await fetch('/dados',{cache:'no-store'})).json();
     document.getElementById('vivo').className='vivo on';document.getElementById('vivo').textContent='ao vivo';
     mostrar('g-mem',d.usada_pct,'c-mem');mostrar('g-swap',d.swap_pct,'c-swap');mostrar('g-pres',d.pressao_pct,'c-pres');if(corNivel(d.nivel))document.getElementById('v-g-pres').style.fill=corNivel(d.nivel);if(d.temp){mostrar('g-temp',d.temp.pct,'c-temp',`${Math.round(d.temp.chip)}<tspan class="pct">°C</tspan>`);document.getElementById('s-temp').innerHTML=`macOS: <b>${d.temp.estado_txt}</b> · SSD ${Math.round(d.temp.ssd)}° · bateria ${Math.round(d.temp.bateria)}°`}
+    if(d.bateria){const b=d.bateria;mostrar('g-bat',b.pct,'c-bat',`${b.tomada?'⚡':''}${b.pct}<tspan class="pct">%</tspan>`);document.getElementById('v-g-bat').style.fill=corBat(b.pct);document.getElementById('s-bat').innerHTML=b.estado==='carregando'?`<b>carregando</b>${b.restante?' · cheia em '+b.restante:''}`:b.estado==='na tomada'?'<b>na tomada</b> · cheia':`<b>${b.estado}</b>${b.restante?' · '+b.restante+' restante':''} · sem tomada o macOS entra em economia e o Mac fica lento`}
     document.getElementById('s-mem').innerHTML=`<b>${gb(d.usada_gb)}</b> de ${gb(d.total_gb)}`;
     document.getElementById('s-swap').innerHTML=`<b>${gb(d.swap_usado_gb)}</b> em uso · cresce sozinho · disco livre ${gb(d.disco_livre_gb)}`;
     document.getElementById('s-pres').innerHTML=`nível do macOS: <b>${d.nivel}</b>`;
