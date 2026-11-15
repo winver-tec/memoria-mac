@@ -116,7 +116,7 @@ def dados():
 # Saiu do limite: vermelho e som param NA HORA (CEO 09/11 "estabilizou, o sinal
 # vermelho tem que sair"); o alarme só zera de vez após 30 s fora (evita re-ping). Pico rápido = só "No limite" na tela.
 LIVRE_MIN_PCT = 20
-BATERIA_MIN_PCT = 10
+BATERIA_MIN_PCT = 15  # CEO 15/11 01:49: avisar em 15% para pôr na tomada
 DISCO_MIN_GB, SUSTENTA, SUSTENTA_CRITICA, DESARMA, REPETE_SOM = 15, 300, 60, 30, 120
 ESTADO = os.path.join(AQUI, 'alerta.json')
 ALARME = {'risco': False, 'no_limite_s': 0, 'desde': None, 'motivo': []}
