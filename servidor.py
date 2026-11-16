@@ -64,6 +64,14 @@ def cooler():
     try: return json.loads(sh(os.path.join(AQUI, 'cooler'))).get('fans', [])
     except Exception: return []
 
+def mais_cpu():
+    """O processo que mais come CPU agora (CEO 15/11: "o monitor tem que pegar e avisar quando dá treta")."""
+    try:
+        pid, cpu, cmd = sh('ps', '-Ao', 'pid=,pcpu=,comm=', '-r').splitlines()[0].split(None, 2)
+        return {'pid': int(pid), 'cpu': float(cpu), 'nome': os.path.basename(cmd.strip())[:60]}
+    except Exception:
+        return None
+
 def dados():
     vm = sh('vm_stat')
     ps_ = int(re.search(r'page size of (\d+)', vm).group(1))
@@ -105,6 +113,7 @@ def dados():
         'nivel': {1: 'normal', 2: 'alerta', 4: 'crítica'}.get(nivel, 'normal'),
         'agentes': agentes, 'carga': [round(x, 1) for x in carga], 'nucleos': os.cpu_count(),
         'grupos': top,
+        'mais_cpu': mais_cpu(),
     }
 
 
@@ -116,6 +125,10 @@ def dados():
 # Saiu do limite: vermelho e som param NA HORA (CEO 09/11 "estabilizou, o sinal
 # vermelho tem que sair"); o alarme só zera de vez após 30 s fora (evita re-ping). Pico rápido = só "No limite" na tela.
 LIVRE_MIN_PCT = 20
+# CEO 15/11 ("os coolers estão rápidos demais, o Mac está esquentando"): calor também é treta.
+COOLER_MAX_PCT = 85      # ventilador acima de 85% do máximo dele
+CPU_PRESO_PCT = 150      # um processo sozinho acima de 150% de CPU (1,5 núcleo)
+CARGA_POR_NUCLEO = 4     # carga de 1 min acima de 4x os núcleos
 BATERIA_MIN_PCT = 15  # CEO 15/11 01:49: avisar em 15% para pôr na tomada
 DISCO_MIN_GB, SUSTENTA, SUSTENTA_CRITICA, DESARMA, REPETE_SOM = 15, 300, 60, 30, 120
 ESTADO = os.path.join(AQUI, 'alerta.json')
@@ -126,6 +139,7 @@ def motivo_do(d):
     if d['swap_usado_gb'] >= TETO_SWAP_GB: m.append(f"swap {d['swap_usado_gb']:.0f} GB (teto 50)")
     if d.get('temp') and (d['temp']['estado'] >= 2 or d['temp']['chip'] >= 95): m.append(f"chip {d['temp']['estado_txt']} ({d['temp']['chip']:.0f} °C)")
     if d['disco_livre_gb'] < DISCO_MIN_GB: m.append(f"disco livre {d['disco_livre_gb']:.0f} GB")
+    m += calor_do(d)
     # CEO 11/11 23:1x: bateria baixa sem tomada = macOS em economia de energia, Mac lento.
     b = d.get('bateria')
     if b and not b['tomada'] and b['pct'] <= BATERIA_MIN_PCT: m.append(f"bateria {b['pct']}% sem tomada")
@@ -136,6 +150,20 @@ def motivo_do(d):
     if d['nivel'] == 'crítica': m.append("pressão crítica")
     elif d['nivel'] == 'alerta' and livre is not None and livre < LIVRE_MIN_PCT: m.append(f"pressão alerta com {livre}% livre")
     return m
+def calor_do(d):
+    """Sinais de calor/carga. Entram no motivo (e no ping ao Maestro), mas não tocam o som:
+    o som continua só para memória, disco, bateria e chip quente."""
+    m, top = [], d.get('mais_cpu') or {}
+    quem = f"{top['nome']} pid {top['pid']} {top['cpu']:.0f}% CPU" if top else '?'
+    fans = [f for f in (d.get('cooler') or []) if f.get('max')]
+    if fans and max(f['rpm'] * 100 / f['max'] for f in fans) >= COOLER_MAX_PCT:
+        m.append('calor: coolers ' + '/'.join(str(f['rpm']) for f in fans) + f' rpm (quem mais come: {quem})')
+    if top and top['cpu'] >= CPU_PRESO_PCT:
+        m.append(f'calor: processo preso em {quem}')
+    if d.get('carga') and d.get('nucleos') and d['carga'][0] >= CARGA_POR_NUCLEO * d['nucleos']:
+        m.append(f"calor: carga {d['carga'][0]:.0f} (quem mais come: {quem})")
+    return m
+
 def vigia():
     risco, inicio, fora_desde, desde, ultimo_som = False, None, None, None, 0
     while True:
@@ -150,7 +178,8 @@ def vigia():
                 inicio = None; fora_desde = fora_desde or agora
                 if risco and agora - fora_desde >= DESARMA:
                     risco, desde = False, None
-            if risco and m and agora - ultimo_som >= REPETE_SOM:
+            so_calor = all(x.startswith('calor:') for x in m)
+            if risco and m and not so_calor and agora - ultimo_som >= REPETE_SOM:
                 subprocess.Popen(['afplay', '/System/Library/Sounds/Sosumi.aiff']); ultimo_som = agora
             if not risco: ultimo_som = 0
             ALARME.update(risco=risco, no_limite_s=int(agora - inicio) if inicio else 0, desde=desde, motivo=m)
